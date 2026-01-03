@@ -1,0 +1,70 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Copy code to VPS
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: 171.22.174.195
+        username: deployer
+        key: ${{ secrets.DEPLOY_KEY }}
+        source: "engine,iranvault-ui,setup"
+        target: "/opt/iranvault"
+
+    - name: Deploy on VPS
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: 171.22.174.195
+        username: deployer
+        key: ${{ secrets.DEPLOY_KEY }}
+        script: |
+          set -e
+          cd /opt/iranvault
+          
+          # Stop existing processes
+          npx pm2 kill || true
+          npx pm2 delete all || true
+          
+          # Install dependencies for engine
+          cd engine
+          npm install --production
+          npm install typescript --save-dev
+          cd ..
+          
+          # Install dependencies for UI
+          cd iranvault-ui
+          npm install
+          cd ..
+          
+          # Build engine
+          cd engine
+          npm run build
+          cd ..
+          
+          # Build UI
+          cd iranvault-ui
+          npm run build
+          cd ..
+          
+          # Start services
+          cd engine
+          npx pm2 start npm --name iranvault-engine -- run start
+          cd ..
+          
+          cd iranvault-ui
+          npx pm2 start npm --name iranvault-ui -- run start
+          cd ..
+          
+          # Save PM2 config
+          npx pm2 save
