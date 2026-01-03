@@ -16,14 +16,11 @@ spec:
       containers:
       - name: frontend
         image: ghcr.io/mb6226/iranvault-frontend:1.0.0
-        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
-        envFrom:
-        - configMapRef:
-            name: iranvault-config
-        - secretRef:
-            name: iranvault-secrets
+        env:
+        - name: NEXT_PUBLIC_API_BASE_URL
+          value: "https://api.domain.com"
         readinessProbe:
           httpGet:
             path: /
