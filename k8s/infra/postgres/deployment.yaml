@@ -1,44 +1,40 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres
+  name: wallet-postgres
   namespace: iranvault-prod
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app: wallet-postgres
   template:
     metadata:
       labels:
-        app: postgres
+        app: wallet-postgres
     spec:
       containers:
       - name: postgres
-        image: postgres:15-alpine
+        image: postgres:16-alpine
         ports:
         - containerPort: 5432
         env:
         - name: POSTGRES_DB
-          value: walletdb
+          value: wallet
         - name: POSTGRES_USER
-          value: walletuser
+          valueFrom:
+            secretKeyRef:
+              name: iranvault-secrets
+              key: DB_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
               name: iranvault-secrets
               key: DB_PASSWORD
         volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "256Mi"
-          limits:
-            cpu: "500m"
-            memory: "1Gi"
+        - mountPath: /var/lib/postgresql/data
+          name: data
       volumes:
-      - name: postgres-storage
+      - name: data
         persistentVolumeClaim:
           claimName: wallet-postgres-pvc

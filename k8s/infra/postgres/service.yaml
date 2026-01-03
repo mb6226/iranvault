@@ -5,7 +5,7 @@ metadata:
   namespace: iranvault-prod
 spec:
   selector:
-    app: postgres
+    app: wallet-postgres
   ports:
   - port: 5432
     targetPort: 5432
