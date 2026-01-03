@@ -1,4 +1,5 @@
 # Ignore private keys and sensitive files
+# These files should ONLY exist in setup/ folder, never in root
 deployer_id_ed25519
 deployer_id_ed25519.pub
 deployer_key.txt
