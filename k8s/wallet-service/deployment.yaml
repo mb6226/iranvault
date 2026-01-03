@@ -18,6 +18,9 @@ spec:
         image: ghcr.io/mb6226/iranvault-wallet-service:1.0.0
         ports:
         - containerPort: 3000
+        env:
+        - name: DATABASE_URL
+          value: postgres://$(DB_USER):$(DB_PASSWORD)@wallet-postgres:5432/wallet
         envFrom:
         - configMapRef:
             name: iranvault-config
@@ -27,16 +30,14 @@ spec:
           httpGet:
             path: /health
             port: 3000
-          initialDelaySeconds: 5
         livenessProbe:
           httpGet:
             path: /health
             port: 3000
-          initialDelaySeconds: 15
         resources:
           requests:
-            cpu: "100m"
-            memory: "128Mi"
+            cpu: "150m"
+            memory: "256Mi"
           limits:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "700m"
+            memory: "768Mi"
