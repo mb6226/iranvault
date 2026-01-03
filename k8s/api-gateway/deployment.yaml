@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: iranvault/api-gateway:latest
+        image: ghcr.io/mb6226/iranvault-api-gateway:1.0.0
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
         envFrom:
@@ -23,22 +24,20 @@ spec:
             name: iranvault-config
         - secretRef:
             name: iranvault-secrets
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
         livenessProbe:
           httpGet:
             path: /health
             port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          initialDelaySeconds: 15
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
