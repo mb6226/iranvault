@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: market-data
+  namespace: iranvault-prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: market-data
+  template:
+    metadata:
+      labels:
+        app: market-data
+    spec:
+      containers:
+      - name: market-data
+        image: ghcr.io/mb6226/iranvault-market-data:1.0.0
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NATS_URL
+          value: nats://nats:4222
+        - name: REDIS_URL
+          value: redis://redis:6379
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"

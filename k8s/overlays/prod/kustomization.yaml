@@ -2,10 +2,12 @@ resources:
 - ../../base
 - ../../infra/postgres
 - ../../infra/nats
+- ../../infra/redis
 - ../../auth-service
 - ../../wallet-service
 - ../../order-service
 - ../../matching-engine
+- ../../market-data
 - ../../api-gateway
 - ../../frontend
 - ingress.yaml

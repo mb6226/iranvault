@@ -14,4 +14,5 @@ data:
   ORDER_SERVICE_URL: http://order-service.iranvault-prod.svc.cluster.local
   MATCHING_ENGINE_URL: http://matching-engine.iranvault-prod.svc.cluster.local
   NATS_URL: nats://nats:4222
+  REDIS_URL: redis://redis:6379
   DATABASE_URL: postgresql://$(DB_USER):$(DB_PASSWORD)@wallet-postgres.iranvault-prod.svc.cluster.local:5432/wallet
