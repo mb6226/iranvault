@@ -2,7 +2,7 @@ resources:
 - ../../base
 - ../../infra/postgres
 - ../../api-gateway
-- ../../frontend
 - ../../auth-service
 - ../../wallet-service
+- ../../frontend
 - ingress.yaml
