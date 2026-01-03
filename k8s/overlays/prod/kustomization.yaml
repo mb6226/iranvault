@@ -3,8 +3,8 @@ resources:
 - ../../infra/postgres
 - ../../auth-service
 - ../../wallet-service
-- ../../matching-engine
 - ../../order-service
+- ../../matching-engine
 - ../../api-gateway
 - ../../frontend
 - ingress.yaml

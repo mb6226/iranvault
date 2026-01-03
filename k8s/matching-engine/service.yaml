@@ -4,6 +4,7 @@ metadata:
   name: matching-engine
   namespace: iranvault-prod
 spec:
+  clusterIP: None
   selector:
     app: matching-engine
   ports:
