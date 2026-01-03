@@ -19,23 +19,27 @@ spec:
         image: ghcr.io/mb6226/iranvault-matching-engine:1.0.0
         ports:
         - containerPort: 3000
-        envFrom:
-        - configMapRef:
-            name: iranvault-config
-        - secretRef:
-            name: iranvault-secrets
+        env:
+        - name: ENGINE_NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: SYMBOLS
+          value: "BTC-USDT,ETH-USDT"
         readinessProbe:
           httpGet:
             path: /health
             port: 3000
+          initialDelaySeconds: 5
         livenessProbe:
           httpGet:
             path: /health
             port: 3000
+          initialDelaySeconds: 15
         resources:
           requests:
             cpu: "500m"
             memory: "1Gi"
           limits:
             cpu: "2"
-            memory: "4Gi"
+            memory: "2Gi"
