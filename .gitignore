@@ -4,6 +4,7 @@ deployer_id_ed25519.pub
 deployer_key.txt
 /setup/deployer_id_ed25519
 /setup/deployer_id_ed25519.pub
+/setup/deployer_key.txt
 
 # other common ignores
 *.log
@@ -15,3 +16,12 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
