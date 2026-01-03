@@ -11,24 +11,24 @@
 
 ```
 iranvault/
-├── .github/workflows/          # CI/CD اتوماسیون
+├── .github/workflows/          # CI/CD Automation
 ├── infra/                      # Infrastructure as Code
-│   ├── k8s/                   # تمام مانیفست‌های K8s ✅
-│   ├── security/              # hardening امنیتی
-│   ├── docker/                # کانتینری‌سازی
-│   └── terraform/             # multi-cloud IaC
-├── helm/                       # Helm charts برای deployment
-├── services/                   # 6 میکروسرویس
-├── engine/                     # موتور معاملات high-performance
-├── iranvault-ui/              # UI حرفه‌ای Next.js
-├── apps/                       # اپلیکیشن‌های کمکی
-├── packages/                   # shared libraries
-├── docs/                       # مستندات enterprise
-├── scripts/                    # اتوماسیون scripts
-├── setup/                      # فایل‌های deployment ✅
-├── backups/                    # فایل‌های پشتیبان ✅
-├── package.json               # monorepo management
-└── README.md                  # مستندات enterprise ✅
+│   ├── k8s/                   # All Kubernetes manifests ✅
+│   ├── security/              # Security hardening
+│   ├── docker/                # Containerization
+│   └── terraform/             # Multi-cloud IaC
+├── helm/                       # Helm charts for deployment
+├── services/                   # 6 Microservices
+├── engine/                     # High-performance trading engine
+├── iranvault-ui/              # Professional Next.js UI
+├── apps/                       # Supporting applications
+├── packages/                   # Shared libraries
+├── docs/                       # Enterprise documentation
+├── scripts/                    # Automation scripts
+├── setup/                      # Deployment files ✅
+├── backups/                    # Backup files ✅
+├── package.json               # Monorepo management
+└── README.md                  # Enterprise documentation ✅
 ```
 
 ### Core Configuration Files
