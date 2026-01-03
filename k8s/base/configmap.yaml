@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: iranvault-config
-  namespace: prod
+  namespace: iranvault-prod
 data:
   NODE_ENV: "production"
   LOG_LEVEL: "info"

@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: api-gateway-ingress
-  namespace: prod
+  namespace: iranvault-prod
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
