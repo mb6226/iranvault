@@ -9,3 +9,4 @@ data:
   LOG_LEVEL: info
   JWT_EXPIRES_IN: 15m
   REFRESH_TOKEN_EXPIRES_IN: 7d
+  AUTH_SERVICE_URL: http://auth-service.iranvault-prod.svc.cluster.local
