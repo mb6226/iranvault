@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iranvault-config
+  namespace: prod
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  REDIS_URL: "redis://redis-service:6379"
+  DATABASE_URL: "postgresql://user:pass@postgres-service:5432/iranvault"
