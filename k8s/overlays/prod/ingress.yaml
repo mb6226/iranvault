@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: api-gateway-ingress
+  name: iranvault-ingress
   namespace: iranvault-prod
 spec:
   rules:
@@ -13,5 +13,15 @@ spec:
         backend:
           service:
             name: api-gateway
+            port:
+              number: 80
+  - host: app.domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
             port:
               number: 80
