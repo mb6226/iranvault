@@ -1,40 +1,24 @@
-# Build stage
-FROM node:18-alpine AS builder
-
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy source code
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine AS runner
-
+FROM node:20-alpine
 WORKDIR /app
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup -S app && adduser -S app -G app
+USER app
 
-# Copy the standalone build
+ENV NODE_ENV=production
+
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Switch to non-root user
-USER nextjs
+COPY --from=builder /app/package*.json ./
+RUN npm ci --omit=dev
 
 EXPOSE 3000
-
-ENV PORT=3000
-
-# Start the application
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
