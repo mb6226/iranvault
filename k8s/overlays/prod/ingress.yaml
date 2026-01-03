@@ -5,16 +5,6 @@ metadata:
   namespace: iranvault-prod
 spec:
   rules:
-  - host: api.domain.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-gateway
-            port:
-              number: 80
   - host: app.domain.com
     http:
       paths:
@@ -23,5 +13,16 @@ spec:
         backend:
           service:
             name: frontend
+            port:
+              number: 80
+
+  - host: api.domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
             port:
               number: 80
