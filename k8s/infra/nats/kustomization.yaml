@@ -1,3 +1,4 @@
 resources:
-- deployment.yaml
+- config.yaml
+- statefulset.yaml
 - service.yaml

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nats-config
+  namespace: iranvault-prod
+data:
+  nats.conf: |
+    port: 4222
+
+    jetstream {
+      store_dir: /data
+      max_mem_store: 1Gb
+      max_file_store: 10Gb
+    }
+
+    http: 8222
