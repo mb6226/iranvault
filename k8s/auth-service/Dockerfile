@@ -1,41 +1,23 @@
-# Build stage
 FROM node:20-alpine AS builder
-
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy source code
 COPY . .
+RUN npm run build
 
-# Build the application (if needed)
-RUN npm run build || true
-
-# Production stage
-FROM node:20-alpine AS runner
-
+FROM node:20-alpine
 WORKDIR /app
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 authuser
+RUN addgroup -S app && adduser -S app -G app
+USER app
 
-# Copy built application
-COPY --from=builder /app ./
+COPY --from=builder /app/dist ./dist
+COPY package*.json ./
+RUN npm ci --omit=dev
 
-# Change ownership
-RUN chown -R authuser:nodejs /app
-
-# Switch to non-root user
-USER authuser
-
+ENV NODE_ENV=production
 EXPOSE 3000
 
-ENV PORT=3000
-
-# Start the application
-CMD ["npm", "start"]
+CMD ["node", "dist/main.js"]
