@@ -2,4 +2,5 @@ resources:
 - ../../base
 - ../../api-gateway
 - ../../frontend
+- ../../auth-service
 - ingress.yaml
