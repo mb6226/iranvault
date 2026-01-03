@@ -1,6 +1,7 @@
 resources:
 - ../../base
 - ../../infra/postgres
+- ../../infra/nats
 - ../../auth-service
 - ../../wallet-service
 - ../../order-service
