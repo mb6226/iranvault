@@ -25,3 +25,7 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Backup files
+backups/
+*.tar.gz
