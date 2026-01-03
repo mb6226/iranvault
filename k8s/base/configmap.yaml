@@ -10,4 +10,6 @@ data:
   JWT_EXPIRES_IN: 15m
   REFRESH_TOKEN_EXPIRES_IN: 7d
   AUTH_SERVICE_URL: http://auth-service.iranvault-prod.svc.cluster.local
+  WALLET_SERVICE_URL: http://wallet-service.iranvault-prod.svc.cluster.local
+  ORDER_SERVICE_URL: http://order-service.iranvault-prod.svc.cluster.local
   DATABASE_URL: postgresql://$(DB_USER):$(DB_PASSWORD)@wallet-postgres.iranvault-prod.svc.cluster.local:5432/wallet

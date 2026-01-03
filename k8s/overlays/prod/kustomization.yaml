@@ -4,5 +4,6 @@ resources:
 - ../../api-gateway
 - ../../auth-service
 - ../../wallet-service
+- ../../order-service
 - ../../frontend
 - ingress.yaml
