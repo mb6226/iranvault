@@ -3,6 +3,7 @@ resources:
 - ../../infra/postgres
 - ../../auth-service
 - ../../wallet-service
+- ../../matching-engine
 - ../../order-service
 - ../../api-gateway
 - ../../frontend

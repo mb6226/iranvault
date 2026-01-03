@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: matching-engine
+  namespace: iranvault-prod
+spec:
+  serviceName: matching-engine
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-engine
+  template:
+    metadata:
+      labels:
+        app: matching-engine
+    spec:
+      containers:
+      - name: matching-engine
+        image: ghcr.io/mb6226/iranvault-matching-engine:1.0.0
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: iranvault-config
+        - secretRef:
+            name: iranvault-secrets
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
