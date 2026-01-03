@@ -7,7 +7,29 @@
 
 ---
 
-## 📁 Enterprise Root Directory Structure
+## 📁 Enterprise Root Directory Structure (Clean & Optimized)
+
+```
+iranvault/
+├── .github/workflows/          # CI/CD اتوماسیون
+├── infra/                      # Infrastructure as Code
+│   ├── k8s/                   # تمام مانیفست‌های K8s ✅
+│   ├── security/              # hardening امنیتی
+│   ├── docker/                # کانتینری‌سازی
+│   └── terraform/             # multi-cloud IaC
+├── helm/                       # Helm charts برای deployment
+├── services/                   # 6 میکروسرویس
+├── engine/                     # موتور معاملات high-performance
+├── iranvault-ui/              # UI حرفه‌ای Next.js
+├── apps/                       # اپلیکیشن‌های کمکی
+├── packages/                   # shared libraries
+├── docs/                       # مستندات enterprise
+├── scripts/                    # اتوماسیون scripts
+├── setup/                      # فایل‌های deployment ✅
+├── backups/                    # فایل‌های پشتیبان ✅
+├── package.json               # monorepo management
+└── README.md                  # مستندات enterprise ✅
+```
 
 ### Core Configuration Files
 - **`package.json`** - Monorepo package management with workspaces
@@ -15,10 +37,10 @@
 - **`README.md`** - Main project documentation and getting started guide
 - **`.gitignore`** - Comprehensive ignore rules for security and build artifacts
 
-### Sensitive Files (Protected & Encrypted)
-- **`deployer_id_ed25519`** - SSH private key for secure deployment
-- **`deployer_id_ed25519.pub`** - SSH public key for deployment authentication
-- **`deployer_key.txt`** - Encrypted deployment authentication credentials
+### Sensitive Files (Protected & Encrypted - Only in setup/)
+- **`setup/deployer_id_ed25519`** - SSH private key for secure deployment
+- **`setup/deployer_id_ed25519.pub`** - SSH public key for deployment authentication
+- **`setup/deployer_key.txt`** - Encrypted deployment authentication credentials
 
 ---
 
