@@ -7,6 +7,7 @@ import { WebSocketServer, WebSocket } from 'ws'
 import express from 'express'
 import cors from 'cors'
 import { createServer } from 'http'
+import { client, httpRequestDuration, websocketConnections, natsMessagesProcessed, redisOperations, tradeEventsBroadcast, orderbookUpdates, tickerUpdates } from './metrics'
 
 const PORT = process.env.PORT || 3000
 const NATS_URL = process.env.NATS_URL || 'nats://nats:4222'
@@ -87,19 +88,25 @@ class MarketDataService {
 
   private setupRoutes() {
     this.app.get('/health', (req, res) => {
+      const end = httpRequestDuration.startTimer({ method: req.method, route: '/health' })
       res.json({ status: 'ok', timestamp: Date.now() })
+      end({ status_code: res.statusCode.toString() })
     })
 
     this.app.get('/api/trades', async (req, res) => {
+      const end = httpRequestDuration.startTimer({ method: req.method, route: '/api/trades' })
       try {
         const trades = await this.redis?.lRange('recent_trades', 0, 49) || []
         res.json(trades.map(t => JSON.parse(t)).reverse())
+        end({ status_code: res.statusCode.toString() })
       } catch (error) {
         res.status(500).json({ error: 'Failed to fetch trades' })
+        end({ status_code: res.statusCode.toString() })
       }
     })
 
     this.app.get('/api/orderbook', async (req, res) => {
+      const end = httpRequestDuration.startTimer({ method: req.method, route: '/api/orderbook' })
       try {
         const orderbookStr = await this.redis?.get('orderbook')
         if (orderbookStr) {
@@ -107,9 +114,17 @@ class MarketDataService {
         } else {
           res.json({ bids: [], asks: [] })
         }
+        end({ status_code: res.statusCode.toString() })
       } catch (error) {
         res.status(500).json({ error: 'Failed to fetch orderbook' })
+        end({ status_code: res.statusCode.toString() })
       }
+    })
+
+    // Metrics endpoint
+    this.app.get('/metrics', async (req, res) => {
+      res.set('Content-Type', client.register.contentType)
+      res.end(await client.register.metrics())
     })
   }
 
@@ -123,6 +138,7 @@ class MarketDataService {
     ;(async () => {
       for await (const msg of tradesSub) {
         try {
+          natsMessagesProcessed.inc({ subject: 'trades' })
           const trade: Trade = JSON.parse(sc.decode(msg.data))
           await this.handleTrade(trade)
         } catch (error) {
@@ -136,6 +152,7 @@ class MarketDataService {
     ;(async () => {
       for await (const msg of orderbookSub) {
         try {
+          natsMessagesProcessed.inc({ subject: 'orderbook' })
           const orderbook: OrderBook = JSON.parse(sc.decode(msg.data))
           await this.handleOrderBookUpdate(orderbook)
         } catch (error) {
@@ -149,6 +166,7 @@ class MarketDataService {
     ;(async () => {
       for await (const msg of tickerSub) {
         try {
+          natsMessagesProcessed.inc({ subject: 'ticker' })
           const ticker: Ticker = JSON.parse(sc.decode(msg.data))
           await this.handleTickerUpdate(ticker)
         } catch (error) {
@@ -166,6 +184,7 @@ class MarketDataService {
 
     // Broadcast to WebSocket clients
     this.broadcast('trade', trade)
+    tradeEventsBroadcast.inc()
   }
 
   private async handleOrderBookUpdate(orderbook: OrderBook) {
@@ -174,6 +193,7 @@ class MarketDataService {
 
     // Broadcast to WebSocket clients
     this.broadcast('orderbook', orderbook)
+    orderbookUpdates.inc()
   }
 
   private async handleTickerUpdate(ticker: Ticker) {
@@ -182,6 +202,7 @@ class MarketDataService {
 
     // Broadcast to WebSocket clients
     this.broadcast('ticker', ticker)
+    tickerUpdates.inc()
   }
 
   private startServer() {
@@ -190,6 +211,7 @@ class MarketDataService {
 
     this.wss.on('connection', (ws: WebSocket) => {
       console.log('WebSocket client connected')
+      websocketConnections.inc()
       this.clients.add(ws)
 
       // Send initial data
@@ -197,11 +219,13 @@ class MarketDataService {
 
       ws.on('close', () => {
         console.log('WebSocket client disconnected')
+        websocketConnections.dec()
         this.clients.delete(ws)
       })
 
       ws.on('error', (error) => {
         console.error('WebSocket error:', error)
+        websocketConnections.dec()
         this.clients.delete(ws)
       })
     })

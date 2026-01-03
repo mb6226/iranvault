@@ -3,6 +3,8 @@ resources:
 - ../../infra/postgres
 - ../../infra/nats
 - ../../infra/redis
+- ../../infra/prometheus
+- ../../infra/grafana
 - ../../auth-service
 - ../../wallet-service
 - ../../order-service

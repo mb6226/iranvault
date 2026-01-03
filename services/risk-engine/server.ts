@@ -8,6 +8,7 @@ import cors from 'cors'
 import { createServer } from 'http'
 import * as fs from 'fs'
 import * as yaml from 'js-yaml'
+import { client, httpRequestDuration, ordersValidated, riskCheckDuration, natsMessagesProcessed, fundLockOperations, liquidationsTriggered, killSwitchStatus, circuitBreakerStatus, rejectionRate } from './metrics'
 
 const PORT = process.env.PORT || 3000
 const NATS_URL = process.env.NATS_URL || 'nats://nats:4222'
@@ -140,22 +141,38 @@ class RiskEngine {
 
   private setupRoutes() {
     this.app.get('/health', (req, res) => {
+      const end = httpRequestDuration.startTimer({ method: req.method, route: '/health' })
+      killSwitchStatus.set(this.rules.killSwitch ? 1 : 0)
+      circuitBreakerStatus.set(this.rejectionCount > this.rules.circuitBreaker.maxRejectionsPerMinute ? 1 : 0)
+      rejectionRate.set(this.rejectionCount)
       res.json({
         status: 'ok',
         timestamp: Date.now(),
         killSwitch: this.rules.killSwitch,
         rejectionCount: this.rejectionCount
       })
+      end({ status_code: res.statusCode.toString() })
     })
 
     this.app.get('/rules', (req, res) => {
+      const end = httpRequestDuration.startTimer({ method: req.method, route: '/rules' })
       res.json(this.rules)
+      end({ status_code: res.statusCode.toString() })
     })
 
     this.app.post('/kill-switch/:state', (req, res) => {
+      const end = httpRequestDuration.startTimer({ method: req.method, route: '/kill-switch' })
       const state = req.params.state === 'true'
       this.rules.killSwitch = state
+      killSwitchStatus.set(state ? 1 : 0)
       res.json({ killSwitch: this.rules.killSwitch })
+      end({ status_code: res.statusCode.toString() })
+    })
+
+    // Metrics endpoint
+    this.app.get('/metrics', async (req, res) => {
+      res.set('Content-Type', client.register.contentType)
+      res.end(await client.register.metrics())
     })
   }
 
@@ -169,6 +186,7 @@ class RiskEngine {
     ;(async () => {
       for await (const msg of orderSub) {
         try {
+          natsMessagesProcessed.inc({ subject: 'orders.created' })
           const order: OrderCreatedEvent = JSON.parse(sc.decode(msg.data))
           await this.handleOrderCreated(order)
         } catch (error) {
@@ -182,6 +200,7 @@ class RiskEngine {
     ;(async () => {
       for await (const msg of walletSub) {
         try {
+          natsMessagesProcessed.inc({ subject: 'wallet.updated' })
           const wallet: WalletUpdatedEvent = JSON.parse(sc.decode(msg.data))
           await this.handleWalletUpdated(wallet)
         } catch (error) {
@@ -195,6 +214,7 @@ class RiskEngine {
     ;(async () => {
       for await (const msg of pricesSub) {
         try {
+          natsMessagesProcessed.inc({ subject: 'prices.updated' })
           const prices: PricesUpdatedEvent = JSON.parse(sc.decode(msg.data))
           await this.handlePricesUpdated(prices)
         } catch (error) {
@@ -206,9 +226,12 @@ class RiskEngine {
 
   private async handleOrderCreated(order: OrderCreatedEvent) {
     console.log('Processing order:', order.orderId)
+    const end = riskCheckDuration.startTimer()
 
     // Check kill switch
     if (this.rules.killSwitch) {
+      ordersValidated.inc({ result: 'rejected' })
+      end({ result: 'rejected' })
       await this.rejectOrder(order.orderId, 'KILL_SWITCH_ACTIVE')
       return
     }
@@ -223,6 +246,8 @@ class RiskEngine {
 
       // Balance check
       if (balance.free < requiredFunds) {
+        ordersValidated.inc({ result: 'rejected' })
+        end({ result: 'rejected' })
         await this.rejectOrder(order.orderId, 'INSUFFICIENT_BALANCE')
         return
       }
@@ -231,12 +256,16 @@ class RiskEngine {
       const exposure = await this.getUserExposure(order.userId, order.symbol)
       const maxExposure = this.rules.maxExposure[order.symbol] || 10
       if (exposure + order.quantity > maxExposure) {
+        ordersValidated.inc({ result: 'rejected' })
+        end({ result: 'rejected' })
         await this.rejectOrder(order.orderId, 'EXPOSURE_LIMIT_EXCEEDED')
         return
       }
 
       // Leverage check
       if (order.leverage && order.leverage > this.rules.maxLeverage) {
+        ordersValidated.inc({ result: 'rejected' })
+        end({ result: 'rejected' })
         await this.rejectOrder(order.orderId, 'LEVERAGE_LIMIT_EXCEEDED')
         return
       }
@@ -244,6 +273,8 @@ class RiskEngine {
       // Order size check
       const maxOrderSize = this.rules.maxOrderSize[order.symbol] || 1
       if (order.quantity > maxOrderSize) {
+        ordersValidated.inc({ result: 'rejected' })
+        end({ result: 'rejected' })
         await this.rejectOrder(order.orderId, 'ORDER_SIZE_LIMIT_EXCEEDED')
         return
       }
@@ -254,8 +285,13 @@ class RiskEngine {
       // Approve order
       await this.approveOrder(order.orderId, requiredFunds)
 
+      ordersValidated.inc({ result: 'approved' })
+      end({ result: 'approved' })
+
     } catch (error) {
       console.error('Error in risk check:', error)
+      ordersValidated.inc({ result: 'error' })
+      end({ result: 'error' })
       await this.rejectOrder(order.orderId, 'RISK_CHECK_ERROR')
     }
   }
@@ -302,6 +338,7 @@ class RiskEngine {
       timestamp: Date.now()
     }
     this.nats.publish('funds.lock', sc.encode(JSON.stringify(event)))
+    fundLockOperations.inc({ operation: 'lock', status: 'success' })
   }
 
   private async approveOrder(orderId: string, lockedFunds: number) {
@@ -384,6 +421,7 @@ class RiskEngine {
       timestamp: Date.now()
     }
     this.nats.publish('positions.liquidate', sc.encode(JSON.stringify(event)))
+    liquidationsTriggered.inc()
   }
 
   private startServer() {
