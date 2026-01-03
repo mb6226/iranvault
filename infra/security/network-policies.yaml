@@ -1,0 +1,420 @@
+---
+# Network Policy for API Gateway - Allow ingress from external and internal services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-gateway-network-policy
+  namespace: iranvault-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: api-gateway
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow external traffic through ingress
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Allow internal services to communicate
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: auth-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: wallet-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: order-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: risk-service
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow communication to internal services
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: auth-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: wallet-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: order-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: risk-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: market-data
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: nats
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+    # Allow HTTPS outbound for external APIs
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# Network Policy for Auth Service - Strict isolation
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-service-network-policy
+  namespace: iranvault-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: auth-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow database access
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow Redis for sessions
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# Network Policy for Order Service - Critical trading operations
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: order-service-network-policy
+  namespace: iranvault-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: order-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: matching-engine
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow database access
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow NATS for event streaming
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: nats
+      ports:
+        - protocol: TCP
+          port: 4222
+    # Allow Redis for caching
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# Network Policy for Matching Engine - Most critical component
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: matching-engine-network-policy
+  namespace: iranvault-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: matching-engine
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: order-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: risk-service
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow database access
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow NATS for event streaming
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: nats
+      ports:
+        - protocol: TCP
+          port: 4222
+    # Allow Redis for market data
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# Network Policy for Market Data - Allow WebSocket connections
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: market-data-network-policy
+  namespace: iranvault-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: market-data
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow external WebSocket connections through ingress
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Allow internal services
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow external market data APIs
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow Redis for caching
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow NATS for publishing market data
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: nats
+      ports:
+        - protocol: TCP
+          port: 4222
+
+---
+# Network Policy for NATS - Event streaming security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nats-network-policy
+  namespace: iranvault-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: nats
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: order-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: matching-engine
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: market-data
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: risk-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: wallet-service
+      ports:
+        - protocol: TCP
+          port: 4222
+        - protocol: TCP
+          port: 8222  # Monitoring port
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# Network Policy for Redis - Cache security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-network-policy
+  namespace: iranvault-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: auth-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: order-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: matching-engine
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: market-data
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: risk-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: wallet-service
+      ports:
+        - protocol: TCP
+          port: 6379
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# Network Policy for PostgreSQL - Database security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-network-policy
+  namespace: iranvault-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: auth-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: order-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: matching-engine
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: risk-service
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: wallet-service
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # Allow DNS resolution
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53

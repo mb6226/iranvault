@@ -1,0 +1,270 @@
+---
+# IranVault Security Monitoring Rules
+# Prometheus alerting rules for security incidents
+
+groups:
+  - name: iranvault.security
+    rules:
+      # Brute Force Detection
+      - alert: BruteForceLoginDetected
+        expr: increase(nginx_ingress_controller_requests{status="429", path=~"/api/v1/auth/login"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: critical
+          category: authentication
+          type: brute_force
+        annotations:
+          summary: "Brute force login attempt detected"
+          description: "High number of 429 responses on login endpoint: {{ $value }} requests in 5 minutes"
+          runbook_url: "https://docs.iranvault.com/security/brute-force-response"
+
+      # DDoS Detection
+      - alert: DDoSAttackDetected
+        expr: rate(nginx_ingress_controller_requests_total[1m]) > 1000
+        for: 1m
+        labels:
+          severity: critical
+          category: ddos
+          type: volumetric
+        annotations:
+          summary: "Potential DDoS attack detected"
+          description: "Abnormally high request rate: {{ $value }} req/s"
+          runbook_url: "https://docs.iranvault.com/security/ddos-response"
+
+      # WAF Block Detection
+      - alert: WAFBlocksHigh
+        expr: increase(nginx_ingress_controller_requests{status="403"}[5m]) > 50
+        for: 3m
+        labels:
+          severity: warning
+          category: waf
+          type: attack_attempt
+        annotations:
+          summary: "High number of WAF blocks"
+          description: "WAF blocked {{ $value }} requests in 5 minutes"
+          runbook_url: "https://docs.iranvault.com/security/waf-monitoring"
+
+      # Rate Limit Exceeded
+      - alert: RateLimitExceeded
+        expr: increase(nginx_ingress_controller_requests{status="429"}[5m]) > 100
+        for: 2m
+        labels:
+          severity: warning
+          category: rate_limiting
+          type: abuse
+        annotations:
+          summary: "Rate limits frequently exceeded"
+          description: "Rate limit exceeded {{ $value }} times in 5 minutes"
+          runbook_url: "https://docs.iranvault.com/security/rate-limit-tuning"
+
+      # Suspicious Authentication Patterns
+      - alert: FailedAuthSpike
+        expr: increase(nginx_ingress_controller_requests{status=~"401|403", path=~"/api/v1/auth"}[5m]) > 20
+        for: 3m
+        labels:
+          severity: warning
+          category: authentication
+          type: suspicious_activity
+        annotations:
+          summary: "Spike in authentication failures"
+          description: "High number of auth failures: {{ $value }} in 5 minutes"
+          runbook_url: "https://docs.iranvault.com/security/auth-monitoring"
+
+      # Trading Endpoint Abuse
+      - alert: TradingEndpointAbuse
+        expr: increase(nginx_ingress_controller_requests{status="429", path=~"/api/v1/orders"}[5m]) > 30
+        for: 2m
+        labels:
+          severity: warning
+          category: trading
+          type: abuse
+        annotations:
+          summary: "Trading endpoint rate limit abuse"
+          description: "Trading orders rate limited {{ $value }} times in 5 minutes"
+          runbook_url: "https://docs.iranvault.com/security/trading-limits"
+
+      # Database Connection Issues (Security Related)
+      - alert: DatabaseConnectionSpike
+        expr: increase(postgres_connections_active[1m]) > 50
+        for: 2m
+        labels:
+          severity: warning
+          category: database
+          type: potential_attack
+        annotations:
+          summary: "Unusual database connection spike"
+          description: "Database connections spiked by {{ $value }} in 1 minute"
+          runbook_url: "https://docs.iranvault.com/security/database-monitoring"
+
+      # Memory Exhaustion (Potential Attack)
+      - alert: MemoryExhaustionRisk
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          category: system
+          type: resource_exhaustion
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanizePercentage }} - potential memory exhaustion attack"
+          runbook_url: "https://docs.iranvault.com/security/memory-monitoring"
+
+      # CPU Exhaustion (Potential Attack)
+      - alert: CPUExhaustionRisk
+        expr: rate(node_cpu_seconds_total{mode!="idle"}[5m]) > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          category: system
+          type: resource_exhaustion
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value | humanizePercentage }} - potential CPU exhaustion attack"
+          runbook_url: "https://docs.iranvault.com/security/cpu-monitoring"
+
+      # Unusual Network Traffic
+      - alert: UnusualNetworkTraffic
+        expr: rate(node_network_receive_bytes_total[5m]) > 100000000
+        for: 3m
+        labels:
+          severity: warning
+          category: network
+          type: traffic_anomaly
+        annotations:
+          summary: "Unusual network traffic detected"
+          description: "High inbound traffic rate: {{ $value }} bytes/sec"
+          runbook_url: "https://docs.iranvault.com/security/network-monitoring"
+
+      # Service Account Token Usage
+      - alert: ServiceAccountTokenAbuse
+        expr: increase(kube_serviceaccount_token_total[1h]) > 100
+        for: 10m
+        labels:
+          severity: warning
+          category: kubernetes
+          type: token_abuse
+        annotations:
+          summary: "Unusual service account token usage"
+          description: "High token creation rate: {{ $value }} tokens/hour"
+          runbook_url: "https://docs.iranvault.com/security/token-monitoring"
+
+      # Pod Security Violations
+      - alert: PodSecurityViolation
+        expr: kube_pod_container_status_restarts_total{reason="CrashLoopBackOff"} > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: kubernetes
+          type: security_violation
+        annotations:
+          summary: "Pod security violation detected"
+          description: "Pod {{ $labels.pod }} in {{ $labels.namespace }} has security issues"
+          runbook_url: "https://docs.iranvault.com/security/pod-security"
+
+      # Certificate Expiry Warning
+      - alert: CertificateExpiryWarning
+        expr: kube_certificatesigningrequest_created < time() - 30*24*3600
+        for: 1h
+        labels:
+          severity: warning
+          category: certificates
+          type: expiry
+        annotations:
+          summary: "Certificate expiring soon"
+          description: "Certificate {{ $labels.name }} expires in less than 30 days"
+          runbook_url: "https://docs.iranvault.com/security/certificate-management"
+
+  - name: iranvault.business_security
+    rules:
+      # Large Withdrawal Alert
+      - alert: LargeWithdrawalDetected
+        expr: increase(wallet_withdrawal_amount_total[1h]) > 10000
+        for: 1m
+        labels:
+          severity: warning
+          category: business
+          type: large_transaction
+        annotations:
+          summary: "Large withdrawal detected"
+          description: "Withdrawal amount exceeded threshold: ${{ $value }}"
+          runbook_url: "https://docs.iranvault.com/security/large-transactions"
+
+      # Rapid Order Placement
+      - alert: RapidOrderPlacement
+        expr: increase(order_placement_total[1m]) > 100
+        for: 2m
+        labels:
+          severity: warning
+          category: trading
+          type: high_frequency
+        annotations:
+          summary: "High frequency order placement"
+          description: "User placing orders too rapidly: {{ $value }} orders/minute"
+          runbook_url: "https://docs.iranvault.com/security/trading-patterns"
+
+      # Unusual Trading Volume
+      - alert: UnusualTradingVolume
+        expr: increase(order_volume_total[5m]) > 1000000
+        for: 1m
+        labels:
+          severity: warning
+          category: trading
+          type: volume_spike
+        annotations:
+          summary: "Unusual trading volume spike"
+          description: "Trading volume spiked: ${{ $value }} in 5 minutes"
+          runbook_url: "https://docs.iranvault.com/security/volume-monitoring"
+
+      # API Key Abuse
+      - alert: APIKeyAbuseDetected
+        expr: increase(api_key_requests_total{status="429"}[5m]) > 20
+        for: 3m
+        labels:
+          severity: warning
+          category: api
+          type: key_abuse
+        annotations:
+          summary: "API key abuse detected"
+          description: "API key {{ $labels.api_key_id }} exceeded rate limits {{ $value }} times"
+          runbook_url: "https://docs.iranvault.com/security/api-key-management"
+
+  - name: iranvault.compliance
+    rules:
+      # KYC Required But Missing
+      - alert: KYCMissingForLargeTransaction
+        expr: order_amount_total{kyc_status="pending"} > 5000
+        for: 1m
+        labels:
+          severity: critical
+          category: compliance
+          type: kyc_violation
+        annotations:
+          summary: "KYC missing for large transaction"
+          description: "Transaction over $5000 without KYC verification"
+          runbook_url: "https://docs.iranvault.com/compliance/kyc-monitoring"
+
+      # Geographic Restriction Violation
+      - alert: GeographicRestrictionViolation
+        expr: increase(login_attempts_total{country="restricted"}[1h]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: compliance
+          type: geographic_violation
+        annotations:
+          summary: "Login from restricted geographic location"
+          description: "Login attempt from restricted country: {{ $labels.country }}"
+          runbook_url: "https://docs.iranvault.com/compliance/geographic-restrictions"
+
+      # AML Alert
+      - alert: AMLSuspiciousActivity
+        expr: increase(transaction_flagged_total{reason="aml"}[1h]) > 5
+        for: 5m
+        labels:
+          severity: critical
+          category: compliance
+          type: aml_alert
+        annotations:
+          summary: "AML suspicious activity detected"
+          description: "Multiple AML-flagged transactions: {{ $value }} in 1 hour"
+          runbook_url: "https://docs.iranvault.com/compliance/aml-monitoring"

@@ -1,0 +1,165 @@
+---
+# Rate Limiting Configuration for IranVault Services
+# This file contains ingress annotations for different rate limiting scenarios
+
+# Global Rate Limits (applied to all services)
+global:
+  # General API rate limiting
+  default:
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "200"
+
+  # Connection limits
+  connections:
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    nginx.ingress.kubernetes.io/limit-burst: "40"
+
+# Authentication Endpoints (High Security)
+auth:
+  # Login endpoints - strict rate limiting
+  login:
+    nginx.ingress.kubernetes.io/rate-limit: "5"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "10"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+
+  # Registration endpoints
+  register:
+    nginx.ingress.kubernetes.io/rate-limit: "3"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1h"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "5"
+
+  # Password reset
+  password-reset:
+    nginx.ingress.kubernetes.io/rate-limit: "2"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1h"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "3"
+
+# Trading Endpoints (Critical Operations)
+trading:
+  # Order placement - moderate rate limiting
+  orders:
+    nginx.ingress.kubernetes.io/rate-limit: "50"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+
+  # Order cancellation
+  cancel-orders:
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "150"
+
+  # Order history queries
+  order-history:
+    nginx.ingress.kubernetes.io/rate-limit: "200"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "300"
+
+# Market Data Endpoints (High Traffic)
+market-data:
+  # Real-time ticker data
+  ticker:
+    nginx.ingress.kubernetes.io/rate-limit: "500"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "1000"
+    nginx.ingress.kubernetes.io/limit-connections: "100"
+
+  # Order book data
+  orderbook:
+    nginx.ingress.kubernetes.io/rate-limit: "300"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "600"
+
+  # Trade history
+  trades:
+    nginx.ingress.kubernetes.io/rate-limit: "200"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "400"
+
+# Wallet Endpoints (Financial Operations)
+wallet:
+  # Balance queries
+  balance:
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "150"
+
+  # Deposit operations
+  deposit:
+    nginx.ingress.kubernetes.io/rate-limit: "10"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1h"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "20"
+
+  # Withdrawal operations - strict limiting
+  withdraw:
+    nginx.ingress.kubernetes.io/rate-limit: "5"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1h"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "10"
+    nginx.ingress.kubernetes.io/limit-connections: "5"
+
+# User-based Rate Limiting (JWT Token)
+user-based:
+  # Premium users (higher limits)
+  premium:
+    nginx.ingress.kubernetes.io/rate-limit-req-zone: |
+      $http_authorization zone=premium:10m rate=200r/m
+    nginx.ingress.kubernetes.io/rate-limit-req-burst: "50"
+    nginx.ingress.kubernetes.io/rate-limit-req-delay: "30"
+
+  # Standard users
+  standard:
+    nginx.ingress.kubernetes.io/rate-limit-req-zone: |
+      $http_authorization zone=standard:10m rate=100r/m
+    nginx.ingress.kubernetes.io/rate-limit-req-burst: "25"
+    nginx.ingress.kubernetes.io/rate-limit-req-delay: "15"
+
+  # Basic users (lower limits)
+  basic:
+    nginx.ingress.kubernetes.io/rate-limit-req-zone: |
+      $http_authorization zone=basic:10m rate=50r/m
+    nginx.ingress.kubernetes.io/rate-limit-req-burst: "10"
+    nginx.ingress.kubernetes.io/rate-limit-req-delay: "5"
+
+# IP-based Rate Limiting (for suspicious activity)
+ip-based:
+  # Suspicious IP blocking
+  suspicious:
+    nginx.ingress.kubernetes.io/rate-limit: "10"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "20"
+    nginx.ingress.kubernetes.io/limit-connections: "5"
+
+# DDoS Protection Settings
+ddos-protection:
+  # General DDoS protection
+  general:
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "2000"
+    nginx.ingress.kubernetes.io/limit-connections: "200"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-burst: "200"
+
+  # WebSocket connections (higher limits for market data)
+  websocket:
+    nginx.ingress.kubernetes.io/rate-limit: "5000"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "10000"
+    nginx.ingress.kubernetes.io/limit-connections: "500"
+
+# Bot Protection
+bot-protection:
+  # Known bot patterns
+  known-bots:
+    nginx.ingress.kubernetes.io/rate-limit: "1"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/limit-connections: "1"
+
+  # Crawler protection
+  crawlers:
+    nginx.ingress.kubernetes.io/rate-limit: "10"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-burst: "20"
