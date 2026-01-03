@@ -10,3 +10,8 @@ deployer_key.txt
 *.env
 node_modules/
 .vscode/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
