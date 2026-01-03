@@ -1,10 +1,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package*.json ./
+COPY ../../services/market-data-service/package*.json ../../services/market-data-service/tsconfig.json ./
 RUN npm ci
 
-COPY . .
+COPY ../../services/market-data-service/ .
 RUN npm run build
 
 FROM node:20-alpine
@@ -14,7 +14,7 @@ RUN addgroup -S md && adduser -S md -G md
 USER md
 
 COPY --from=builder /app/dist ./dist
-COPY package*.json ./
+COPY --from=builder /app/package*.json ./
 RUN npm ci --omit=dev
 
 ENV NODE_ENV=production

@@ -1,0 +1,30 @@
+{
+  "name": "iranvault-market-data-service",
+  "version": "1.0.0",
+  "description": "IranVault Market Data Service - Real-time market data via WebSocket with Redis caching",
+  "main": "dist/server.js",
+  "scripts": {
+    "start": "node dist/server.js",
+    "dev": "ts-node server.ts",
+    "build": "tsc",
+    "serve": "node dist/server.js"
+  },
+  "dependencies": {
+    "nats": "^2.17.0",
+    "redis": "^4.6.10",
+    "ws": "^8.14.2",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/ws": "^8.5.8",
+    "@types/node": "^20.8.10",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3"
+  },
+  "keywords": ["market-data", "websocket", "redis", "nats", "trading"],
+  "author": "IranVault Team",
+  "license": "MIT"
+}
