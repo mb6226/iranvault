@@ -8,6 +8,7 @@ resources:
 - ../../order-service
 - ../../matching-engine
 - ../../market-data
+- ../../risk-engine
 - ../../api-gateway
 - ../../frontend
 - ingress.yaml
