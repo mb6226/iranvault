@@ -4,7 +4,7 @@ metadata:
   name: order-service
   namespace: iranvault-prod
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: order-service
@@ -18,6 +18,13 @@ spec:
         image: ghcr.io/mb6226/iranvault-order-service:1.0.0
         ports:
         - containerPort: 3000
+        env:
+        - name: AUTH_SERVICE_URL
+          value: http://auth-service
+        - name: WALLET_SERVICE_URL
+          value: http://wallet-service
+        - name: MATCHING_ENGINE_URL
+          value: http://matching-engine
         envFrom:
         - configMapRef:
             name: iranvault-config
@@ -33,8 +40,8 @@ spec:
             port: 3000
         resources:
           requests:
-            cpu: "100m"
-            memory: "128Mi"
+            cpu: "200m"
+            memory: "256Mi"
           limits:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "1"
+            memory: "1Gi"
