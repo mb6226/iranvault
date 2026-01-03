@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spot Trading UI</title>
+  <link rel="stylesheet" href="reset.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="left">BNB / USDT</div>
+    <div class="right">
+      <span onclick="location.href='wallet.html'">Wallet</span>
+      <span onclick="location.href='orders.html'">Orders</span>
+      <span>Profile</span>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="container">
+
+    <!-- Chart -->
+    <section class="chart">
+      <div class="chart-placeholder">Chart (TradingView)</div>
+    </section>
+
+    <!-- Order Book -->
+    <section class="orderbook">
+      <h3>Order Book</h3>
+      <div class="orders sell">
+        <div class="order-row sell"><span>604.50</span><span>1.2</span><span>725</span></div>
+        <div class="order-row sell"><span>604.30</span><span>0.8</span><span>483</span></div>
+      </div>
+      <div class="mid-price">604.25</div>
+      <div class="orders buy">
+        <div class="order-row buy"><span>604.10</span><span>1.5</span><span>906</span></div>
+        <div class="order-row buy"><span>603.90</span><span>0.9</span><span>544</span></div>
+      </div>
+    </section>
+
+    <!-- Buy / Sell -->
+    <section class="trade-panel">
+      <div class="tabs">
+        <button class="active">Limit</button>
+        <button>Market</button>
+        <button>Stop</button>
+      </div>
+
+      <form>
+        <input placeholder="Price" />
+        <input placeholder="Amount" />
+        <input placeholder="Total" />
+        <button class="buy">Buy</button>
+        <button class="sell">Sell</button>
+      </form>
+    </section>
+
+    <!-- Bottom Tabs -->
+    <section class="bottom">
+      <div class="bottom-tabs">
+        <span class="active">Open Orders</span>
+        <span>Order History</span>
+        <span>Assets</span>
+      </div>
+      <div class="bottom-content">No open orders</div>
+    </section>
+
+  </main>
+
+</body>
+</html>

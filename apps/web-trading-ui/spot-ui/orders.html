@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Orders</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="left">Orders</div>
+  <div class="right">
+    <span onclick="location.href='index.html'">Spot</span>
+    <span onclick="location.href='wallet.html'">Wallet</span>
+    <span>Profile</span>
+  </div>
+</header>
+
+<main style="padding:16px">
+  <section class="bottom">
+    <div class="bottom-tabs">
+      <span class="active">Open Orders</span>
+      <span>Order History</span>
+      <span>Trade History</span>
+    </div>
+
+    <div class="bottom-content">
+      <table width="100%">
+        <thead>
+          <tr>
+            <th align="left">Pair</th>
+            <th align="right">Price</th>
+            <th align="right">Amount</th>
+            <th align="right">Filled</th>
+            <th align="right">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>BNB/USDT</td>
+            <td align="right">604.20</td>
+            <td align="right">1.5</td>
+            <td align="right">0.8</td>
+            <td align="right" style="color:#f0b90b">Open</td>
+          </tr>
+          <tr>
+            <td>ETH/USDT</td>
+            <td align="right">2,340.00</td>
+            <td align="right">0.4</td>
+            <td align="right">0.4</td>
+            <td align="right" style="color:#0ecb81">Filled</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+</body>
+</html>

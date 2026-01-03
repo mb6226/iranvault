@@ -1,0 +1,12 @@
+# Ignore private keys and sensitive files
+deployer_id_ed25519
+deployer_id_ed25519.pub
+deployer_key.txt
+/setup/deployer_id_ed25519
+/setup/deployer_id_ed25519.pub
+
+# other common ignores
+*.log
+*.env
+node_modules/
+.vscode/

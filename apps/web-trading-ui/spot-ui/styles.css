@@ -1,0 +1,204 @@
+:root {
+  --bg-main: #0b0e11;
+  --bg-panel: #161a1e;
+  --bg-input: #0b0e11;
+  --border: #22262f;
+  --text-main: #eaecef;
+  --text-muted: #848e9c;
+  --green: #0ecb81;
+  --red: #f6465d;
+  --yellow: #f0b90b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 13px;
+}
+
+/* ===== Top Bar ===== */
+.topbar {
+  height: 56px;
+  background: var(--bg-panel);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar .left {
+  font-weight: 600;
+}
+
+.topbar .right span {
+  margin-left: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.topbar .right span:hover {
+  color: var(--text-main);
+}
+
+/* ===== Layout Grid ===== */
+.container {
+  display: grid;
+  grid-template-columns: 1fr 280px 320px;
+  grid-template-rows: 1fr 240px;
+  gap: 8px;
+  padding: 8px;
+}
+
+/* ===== Panels ===== */
+.chart,
+.orderbook,
+.trade-panel,
+.bottom {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+}
+
+/* ===== Chart ===== */
+.chart {
+  position: relative;
+}
+
+.chart-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+/* ===== Order Book ===== */
+.orderbook {
+  padding: 8px;
+}
+
+.orderbook h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.orders {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  font-size: 11px;
+}
+
+.order-row.sell {
+  color: var(--red);
+}
+
+.order-row.buy {
+  color: var(--green);
+}
+
+.mid-price {
+  text-align: center;
+  margin: 6px 0;
+  font-weight: 600;
+}
+
+/* ===== Trade Panel ===== */
+.trade-panel {
+  padding: 8px;
+}
+
+.tabs {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.tabs button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px;
+  cursor: pointer;
+}
+
+.tabs .active {
+  color: var(--yellow);
+  border-bottom: 2px solid var(--yellow);
+}
+
+.trade-panel input {
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+.trade-panel input:focus {
+  outline: none;
+  border-color: var(--yellow);
+}
+
+.trade-panel .actions {
+  display: flex;
+  gap: 8px;
+}
+
+.trade-panel button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.buy {
+  background: var(--green);
+  color: #000;
+}
+
+.sell {
+  background: var(--red);
+  color: #000;
+}
+
+/* ===== Bottom ===== */
+.bottom {
+  grid-column: 1 / 4;
+}
+
+.bottom-tabs {
+  display: flex;
+  gap: 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bottom-tabs span {
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.bottom-tabs .active {
+  color: var(--yellow);
+}
+
+.bottom-content {
+  padding: 16px;
+  color: var(--text-muted);
+}
