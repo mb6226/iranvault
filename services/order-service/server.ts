@@ -5,6 +5,7 @@ import { connect, NatsConnection, StringCodec } from 'nats'
 import express from 'express'
 import cors from 'cors'
 import { v4 as uuidv4 } from 'uuid'
+import { client, httpRequestDuration, ordersCreated, orderProcessingDuration, natsMessagesProcessed, pendingOrders } from './metrics'
 
 const PORT = process.env.PORT || 3000
 const NATS_URL = process.env.NATS_URL || 'nats://nats:4222'
@@ -60,14 +61,22 @@ class OrderService {
 
   private setupRoutes() {
     this.app.post('/orders', async (req, res) => {
+      const end = httpRequestDuration.startTimer({ method: req.method, route: '/orders' })
+      const processingEnd = orderProcessingDuration.startTimer()
       try {
         const orderReq: OrderRequest = req.body
         const orderId = uuidv4()
+
+        ordersCreated.inc({ status: 'pending' })
+        pendingOrders.inc()
 
         // Create order promise
         const orderPromise = new Promise<OrderResponse>((resolve, reject) => {
           const timeout = setTimeout(() => {
             this.pendingOrders.delete(orderId)
+            pendingOrders.dec()
+            ordersCreated.inc({ status: 'timeout' })
+            processingEnd({ result: 'timeout' })
             reject(new Error('Order validation timeout'))
           }, 30000) // 30 second timeout
 
@@ -80,15 +89,30 @@ class OrderService {
         // Wait for response
         const result = await orderPromise
 
+        ordersCreated.inc({ status: result.status })
+        processingEnd({ result: result.status })
+
         res.json(result)
+        end({ status_code: res.statusCode.toString() })
       } catch (error) {
+        ordersCreated.inc({ status: 'error' })
+        processingEnd({ result: 'error' })
         console.error('Error creating order:', error)
         res.status(500).json({ error: 'Failed to create order' })
+        end({ status_code: res.statusCode.toString() })
       }
     })
 
     this.app.get('/health', (req, res) => {
+      const end = httpRequestDuration.startTimer({ method: req.method, route: '/health' })
       res.json({ status: 'ok', timestamp: Date.now() })
+      end({ status_code: res.statusCode.toString() })
+    })
+
+    // Metrics endpoint
+    this.app.get('/metrics', async (req, res) => {
+      res.set('Content-Type', client.register.contentType)
+      res.end(await client.register.metrics())
     })
   }
 
@@ -121,6 +145,7 @@ class OrderService {
     ;(async () => {
       for await (const msg of approvedSub) {
         try {
+          natsMessagesProcessed.inc({ subject: 'orders.approved' })
           const approved = JSON.parse(sc.decode(msg.data))
           this.handleOrderApproved(approved)
         } catch (error) {
@@ -134,6 +159,7 @@ class OrderService {
     ;(async () => {
       for await (const msg of rejectedSub) {
         try {
+          natsMessagesProcessed.inc({ subject: 'orders.rejected' })
           const rejected = JSON.parse(sc.decode(msg.data))
           this.handleOrderRejected(rejected)
         } catch (error) {
@@ -148,6 +174,7 @@ class OrderService {
     if (pending) {
       clearTimeout(pending.timeout)
       this.pendingOrders.delete(approved.orderId)
+      pendingOrders.dec()
       pending.resolve({
         orderId: approved.orderId,
         status: 'approved'
@@ -163,6 +190,7 @@ class OrderService {
     if (pending) {
       clearTimeout(pending.timeout)
       this.pendingOrders.delete(rejected.orderId)
+      pendingOrders.dec()
       pending.reject(new Error(rejected.reason || 'Order rejected'))
     }
   }
