@@ -1,0 +1,136 @@
+# Production values for market-data chart
+image:
+  repository: ghcr.io/mb6226/iranvault-market-data
+  tag: ""  # Will be set by CI/CD pipeline
+  pullPolicy: IfNotPresent
+
+replicaCount: 3
+
+canary:
+  enabled: true
+  weight: 10
+  replicaCount: 1
+  image:
+    repository: ghcr.io/mb6226/iranvault-market-data
+    tag: ""  # Will be set by CI/CD pipeline
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: market-data.iranvault.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: market-data-tls
+      hosts:
+        - market-data.iranvault.com
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+networkPolicy:
+  enabled: true
+  allowedIngressPods:
+    - app.kubernetes.io/name: api-gateway
+  allowedIngressNamespaces:
+    - name: ingress-nginx
+  allowedEgressPods:
+    - app.kubernetes.io/name: nats
+    - app.kubernetes.io/name: redis
+
+config:
+  logLevel: "info"
+  enableMetrics: "true"
+
+env:
+  - name: PORT
+    value: "3000"
+  - name: NATS_URL
+    value: "nats://nats:4222"
+  - name: REDIS_URL
+    value: "redis://redis:6379"
+  - name: LOG_LEVEL
+    value: "info"
+  - name: ENABLE_METRICS
+    value: "true"
+  - name: NODE_ENV
+    value: "production"
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3000"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  fsGroup: 101
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 101
+  capabilities:
+    drop:
+      - ALL
+
+imagePullSecrets:
+  - name: ghcr-secret
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - market-data
+        topologyKey: kubernetes.io/hostname

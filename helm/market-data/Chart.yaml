@@ -1,0 +1,16 @@
+apiVersion: v2
+name: market-data
+description: IranVault Market Data Service Helm Chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+- market-data
+- websocket
+- trading
+- iranvault
+
+maintainers:
+- name: IranVault Team
+  email: team@iranvault.com

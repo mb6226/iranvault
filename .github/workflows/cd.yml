@@ -1,0 +1,137 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - market-data
+        - risk-engine
+        - order-service
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [market-data-service, risk-engine, order-service]
+        include:
+        - service: market-data-service
+          name: market-data
+        - service: risk-engine
+          name: risk-engine
+        - service: order-service
+          name: order-service
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to GitHub Container Registry
+      run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Extract metadata
+      id: meta
+      run: |
+        echo "tags=ghcr.io/${{ github.repository_owner }}/iranvault-${{ matrix.name }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+        echo "tags-latest=ghcr.io/${{ github.repository_owner }}/iranvault-${{ matrix.name }}:latest" >> $GITHUB_OUTPUT
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: services/${{ matrix.service }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }},${{ steps.meta.outputs.tags-latest }}
+        labels: |
+          org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          org.opencontainers.image.revision=${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [market-data, risk-engine, order-service]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: v3.12.0
+
+    - name: Configure kubectl
+      run: |
+        mkdir -p ~/.kube
+        echo ${{ secrets.KUBE_CONFIG }} | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+
+    - name: Deploy to Kubernetes (Canary)
+      run: |
+        # Deploy canary version
+        helm upgrade --install ${{ matrix.service }}-canary helm/${{ matrix.service }} \
+          --set image.tag=${{ github.sha }} \
+          --set canary.enabled=true \
+          --set canary.weight=10 \
+          --set replicaCount=1 \
+          --namespace iranvault-prod \
+          --create-namespace
+
+    - name: Wait for canary to be ready
+      run: |
+        kubectl wait --for=condition=available --timeout=300s deployment/${{ matrix.service }}-canary -n iranvault-prod
+
+    - name: Run canary tests
+      run: |
+        # Simple health check
+        kubectl run canary-test --image=curlimages/curl --rm -i --restart=Never -- curl -f http://${{ matrix.service }}-canary.iranvault-prod.svc.cluster.local/health || exit 1
+
+    - name: Promote canary to stable
+      run: |
+        # Scale down canary
+        kubectl scale deployment ${{ matrix.service }}-canary --replicas=0 -n iranvault-prod
+
+        # Deploy stable version
+        helm upgrade --install ${{ matrix.service }} helm/${{ matrix.service }} \
+          --set image.tag=${{ github.sha }} \
+          --set canary.enabled=false \
+          --set replicaCount=3 \
+          --namespace iranvault-prod
+
+    - name: Wait for stable deployment
+      run: |
+        kubectl wait --for=condition=available --timeout=600s deployment/${{ matrix.service }} -n iranvault-prod
+
+    - name: Run post-deployment tests
+      run: |
+        # Health check
+        kubectl run post-deploy-test --image=curlimages/curl --rm -i --restart=Never -- curl -f http://${{ matrix.service }}.iranvault-prod.svc.cluster.local/health || exit 1
+
+  rollback:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: failure()
+    strategy:
+      matrix:
+        service: [market-data, risk-engine, order-service]
+    steps:
+    - name: Configure kubectl
+      run: |
+        mkdir -p ~/.kube
+        echo ${{ secrets.KUBE_CONFIG }} | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+
+    - name: Rollback deployment
+      run: |
+        # Rollback to previous version
+        helm rollback ${{ matrix.service }} -n iranvault-prod || true
+
+        # Clean up canary
+        kubectl delete deployment ${{ matrix.service }}-canary -n iranvault-prod --ignore-not-found=true

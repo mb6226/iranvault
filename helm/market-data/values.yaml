@@ -1,0 +1,102 @@
+# Default values for market-data chart
+image:
+  repository: ghcr.io/mb6226/iranvault-market-data
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+canary:
+  enabled: false
+  weight: 10
+  replicaCount: 1
+  image:
+    repository: ghcr.io/mb6226/iranvault-market-data
+    tag: "canary"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: market-data.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: market-data-tls
+  #    hosts:
+  #      - market-data.local
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: 1
+
+networkPolicy:
+  enabled: false
+  allowedIngressPods: []
+  allowedIngressNamespaces: []
+  allowedEgressPods: []
+
+config: {}
+
+env:
+  - name: PORT
+    value: "3000"
+  - name: NATS_URL
+    value: "nats://nats:4222"
+  - name: REDIS_URL
+    value: "redis://redis:6379"
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3000"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext: {}
+securityContext: {}
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
