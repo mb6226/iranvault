@@ -1,11 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-service
+  name: wallet-postgres
   namespace: iranvault-prod
 spec:
   selector:
     app: wallet-postgres
   ports:
   - port: 5432
-    targetPort: 5432
