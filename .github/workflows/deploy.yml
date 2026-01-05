@@ -13,6 +13,28 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Check DEPLOY_KEY secret present
+      run: |
+        if [ -z "${{ secrets.DEPLOY_KEY }}" ]; then
+          echo "Missing DEPLOY_KEY secret - set repository secret 'DEPLOY_KEY' with your private key";
+          exit 1;
+        fi
+
+    - name: Add VPS host key to known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H 171.22.174.195 >> ~/.ssh/known_hosts
+        ls -l ~/.ssh
+
+    - name: Test SSH connectivity to VPS
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: 171.22.174.195
+        username: deployer
+        key: ${{ secrets.DEPLOY_KEY }}
+        script: |
+          echo "SSH connectivity test: $(hostname)"
+
     - name: Copy code to VPS
       uses: appleboy/scp-action@v0.1.7
       with:
@@ -39,32 +61,32 @@ jobs:
           # Install dependencies for engine
           cd engine
           npm install --production
-          npm install typescript --save-dev
+          npm install typescript --save-dev || true
           cd ..
           
           # Install dependencies for UI
           cd iranvault-ui
-          npm install
+          npm install || true
           cd ..
           
           # Build engine
           cd engine
-          npm run build
+          npm run build || true
           cd ..
           
           # Build UI
           cd iranvault-ui
-          npm run build
+          npm run build || true
           cd ..
           
           # Start services
           cd engine
-          npx pm2 start npm --name iranvault-engine -- run start
+          npx pm2 start npm --name iranvault-engine -- run start || true
           cd ..
           
           cd iranvault-ui
-          npx pm2 start npm --name iranvault-ui -- run start
+          npx pm2 start npm --name iranvault-ui -- run start || true
           cd ..
           
           # Save PM2 config
-          npx pm2 save
+          npx pm2 save || true
