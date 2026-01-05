@@ -85,7 +85,7 @@ jobs:
           cd ..
           
           cd iranvault-ui
-          npx pm2 start npm --name iranvault-ui -- run start || true
+          HOST=0.0.0.0 npx pm2 start npm --name iranvault-ui -- run start || true
           cd ..
           
           # Save PM2 config
