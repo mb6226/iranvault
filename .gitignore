@@ -11,6 +11,7 @@ deployer_key.txt
 *.log
 *.env
 node_modules/
+iranvault-ui/node_modules
 .vscode/
 
 # Build outputs
