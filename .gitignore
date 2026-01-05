@@ -12,6 +12,7 @@ deployer_key.txt
 *.env
 node_modules/
 iranvault-ui/node_modules
+engine/node_modules
 .vscode/
 
 # Build outputs
